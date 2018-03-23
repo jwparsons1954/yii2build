@@ -1,4 +1,3 @@
-
 <?php
 namespace common\models;
 use Yii;
@@ -8,6 +7,10 @@ use yii\db\ActiveRecord;
 use yii\db\Expression;
 use yii\web\IdentityInterface;
 use yii\helpers\Security;
+use backend\models\Role;
+use yii\helpers\ArrayHelper;
+use backend\models\Status;
+use backend\models\UserType;
 /**
 * User model
 *
@@ -64,6 +67,7 @@ return [
 ['email', 'required'],
 ['email', 'email'],
 ['email', 'unique'],
+[['role_id'],'in', 'range'=>array_keys($this->getRoleList())],
 ];
 }
 /* Your model attribute labels */
@@ -177,5 +181,87 @@ $this->password_reset_token = Yii::$app->security->generateRandomString(). '_' .
 public function removePasswordResetToken()
 {
 $this->password_reset_token = null;
+}
+/**
+* get role relationship
+*
+*/
+public function getRole()
+{
+return $this->hasOne(Role::className(), ['role_value' => 'role_id']);
+}
+/**
+* get role name
+*
+*/
+public function getRoleName()
+{
+return $this->role ? $this->role->role_name : '- no role -';
+}
+/**
+* get list of roles for dropdown
+*/
+public static function getRoleList()
+{
+$droptions = Role::find()->asArray()->all();
+return Arrayhelper::map($droptions, 'role_value', 'role_name');
+}
+/**
+* get status relation
+*
+*/
+public function getStatus()
+{
+return $this->hasOne(Status::className(), ['status_value' => 'status_id']);
+}
+/**
+* get status name
+*
+*/
+public function getStatusName()
+{
+return $this->status ? $this->status->status_name : '- no status -';
+}
+/**
+* get list of statuses for dropdown
+*/
+public static function getStatusList()
+{
+$droptions = Status::find()->asArray()->all();
+return Arrayhelper::map($droptions, 'status_value', 'status_name');
+}
+/**
+*getUserType
+*line break to avoid word wrap in PDF
+* code as single line in your IDE
+*/
+public function getUserType()
+{
+return $this->hasOne(UserType::className(), ['user_type_value' =>
+'user_type_id']);
+}
+/**
+* get user type name
+*
+*/
+public function getUserTypeName()
+{
+return $this->userType ? $this->userType->user_type_name : '- no user type -';
+}
+/**
+* get list of user types for dropdown
+*/
+public static function getUserTypeList()
+{
+$droptions = UserType::find()->asArray()->all();
+return Arrayhelper::map($droptions, 'user_type_value', 'user_type_name');
+}
+/**
+* get user type id
+*
+*/
+public function getUserTypeId()
+{
+return $this->userType ? $this->userType->id : 'none';
 }
 }
