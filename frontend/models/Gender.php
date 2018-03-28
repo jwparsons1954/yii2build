@@ -41,4 +41,13 @@ class Gender extends \yii\db\ActiveRecord
             'gender_name' => 'Gender Name',
         ];
     }
+	/**
+* @return \yii\db\ActiveQuery
+*/
+
+public function getProfiles()
+{
+return $this->hasMany(Profile::className(), ['gender_id' => 'id']);
+}
+}
 }

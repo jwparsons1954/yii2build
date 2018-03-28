@@ -8,6 +8,7 @@ use yii\helpers\Html;
 use yii\helpers\ArrayHelper;
 use yii\db\Expression;
 /**
+
 * This is the model class for table "profile".
 *
 * @property string $id
@@ -40,9 +41,10 @@ return [
 [['gender_id', 'user_id', 'birthdate'], 'required'],
 [['gender_id', 'user_id'], 'integer'],
 [['first_name', 'last_name'], 'string', 'max' => 45],
+
 [['birthdate'], 'date', 'format'=>'Y-m-d'],
-[['gender_id'],'in', 'range'=>array_keys($this->getGenderList())]];
-}
+];
+[['gender_id'],'in', 'range'=>array_keys($this->getGenderList())]}
 /**
 * @inheritdoc
 */
@@ -59,7 +61,8 @@ return [
 'user_id' => 'User ID',
 'genderName' => Yii::t('app', 'Gender'),
 'userLink' => Yii::t('app', 'User'),
-'profileIdLink' => Yii::t('app', 'Profile'),];
+'profileIdLink' => Yii::t('app', 'Profile'),
+];
 }
 /**
 * @return \yii\db\ActiveQuery
@@ -82,6 +85,7 @@ ActiveRecord::EVENT_BEFORE_INSERT => ['created_at', 'updated_at'],
 ActiveRecord::EVENT_BEFORE_UPDATE => ['updated_at'],
 ],
 'value' => new Expression('NOW()'),
+
 ],
 ];
 }

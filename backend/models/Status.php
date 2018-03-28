@@ -7,7 +7,7 @@ use Yii;
 /**
  * This is the model class for table "status".
  *
- * @property int $id
+ * @property int $status_id
  * @property string $status_name
  * @property int $status_value
  */
@@ -39,7 +39,7 @@ class Status extends \yii\db\ActiveRecord
     public function attributeLabels()
     {
         return [
-            'id' => 'ID',
+            'status_id' => 'Status ID',
             'status_name' => 'Status Name',
             'status_value' => 'Status Value',
         ];

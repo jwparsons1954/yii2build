@@ -44,11 +44,11 @@ class Role extends \yii\db\ActiveRecord
             'role_value' => 'Role Value',
         ];
     }
-/**
+	/**
 * @return \yii\db\ActiveQuery
-*/
-public function getUsers()
-{
-return $this->hasMany(User::className(), ['role_id' => 'role_value']);
+	*/
+	public function getUsers()
+	{
+	return $this->hasMany(User::className(), ['role_id' => 'role_value']);
 }
-	}
+}

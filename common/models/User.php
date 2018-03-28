@@ -2,15 +2,17 @@
 namespace common\models;
 use Yii;
 use yii\base\NotSupportedException;
-use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
 use yii\db\Expression;
 use yii\web\IdentityInterface;
 use yii\helpers\Security;
 use backend\models\Role;
-use yii\helpers\ArrayHelper;
 use backend\models\Status;
 use backend\models\UserType;
+use frontend\models\Profile;
+use yii\helpers\ArrayHelper;
+use yii\helpers\Url;
+use yii\helpers\Html;
 /**
 * User model
 *
@@ -20,9 +22,8 @@ use backend\models\UserType;
 * @property string $password_reset_token
 * @property string $email
 * @property string $auth_key
-* @property integer $role_id
-* @property integer $status_id
-* @proprty integer $user_type_id
+* @property integer $role
+* @property integer $status
 * @property integer $created_at
 * @property integer $updated_at
 * @property string $password write-only password
@@ -32,10 +33,11 @@ class User extends ActiveRecord implements IdentityInterface
 const STATUS_ACTIVE = 10;
 public static function tableName()
 {
+
 return 'user';
 }
 /**
-* behaviors
+* @inheritdoc
 */
 public function behaviors()
 {
@@ -51,23 +53,25 @@ ActiveRecord::EVENT_BEFORE_UPDATE => ['updated_at'],
 ];
 }
 /**
-* validation rules
+* @inheritdoc
 */
 public function rules()
 {
 return [
 ['status_id', 'default', 'value' => self::STATUS_ACTIVE],
+[['status_id'],'in', 'range'=>array_keys($this->getStatusList())],
 ['role_id', 'default', 'value' => 10],
+[['role_id'],'in', 'range'=>array_keys($this->getRoleList())],
 ['user_type_id', 'default', 'value' => 10],
+[['user_type_id'],'in', 'range'=>array_keys($this->getUserTypeList())],
+
 ['username', 'filter', 'filter' => 'trim'],
 ['username', 'required'],
-['username', 'unique'],
 ['username', 'string', 'min' => 2, 'max' => 255],
 ['email', 'filter', 'filter' => 'trim'],
 ['email', 'required'],
 ['email', 'email'],
 ['email', 'unique'],
-[['role_id'],'in', 'range'=>array_keys($this->getRoleList())],
 ];
 }
 /* Your model attribute labels */
@@ -75,17 +79,27 @@ public function attributeLabels()
 {
 return [
 /* Your other attribute labels */
+'roleName' => Yii::t('app', 'Role'),
+'statusName' => Yii::t('app', 'Status'),
+'profileId' => Yii::t('app', 'Profile'),
+'profileLink' => Yii::t('app', 'Profile'),
+'userLink' => Yii::t('app', 'User'),
+'username' => Yii::t('app', 'User'),
+'userTypeName' => Yii::t('app', 'User Type'),
+'userTypeId' => Yii::t('app', 'User Type'),
+'userIdLink' => Yii::t('app', 'ID'),
 ];
 }
 /**
-* @findIdentity
+* @inheritdoc
 */
 public static function findIdentity($id)
+
 {
 return static::findOne(['id' => $id, 'status_id' => self::STATUS_ACTIVE]);
 }
 /**
-* @findIdentityByAccessToken
+* @inheritdoc
 */
 public static function findIdentityByAccessToken($token, $type = null)
 {
@@ -93,12 +107,14 @@ return static::findOne(['auth_key' => $token]);
 }
 /**
 * Finds user by username
-* broken into 2 lines to avoid wordwrapping * @param string $username
+*line break for wordwrap in pdf, should be single line
+* @param string $username
 * @return static|null
 */
 public static function findByUsername($username)
 {
-return static::findOne(['username' => $username, 'status_id' =>self::STATUS_ACTIVE]);
+return static::findOne(['username' => $username, 'status_id' =>
+self::STATUS_ACTIVE]);
 }
 /**
 * Finds user by password reset token
@@ -108,6 +124,7 @@ return static::findOne(['username' => $username, 'status_id' =>self::STATUS_ACTI
 */
 public static function findByPasswordResetToken($token)
 {
+
 $expire = Yii::$app->params['user.passwordResetTokenExpire'];
 $parts = explode('_', $token);
 $timestamp = (int) end($parts);
@@ -121,22 +138,23 @@ return static::findOne([
 ]);
 }
 /**
-* @getId
+* @inheritdoc
 */
 public function getId()
 {
 return $this->getPrimaryKey();
 }
 /**
-* @getAuthKey
+* @inheritdoc
 */
 public function getAuthKey()
 {
 return $this->auth_key;
 }
 /**
-* @validateAuthKey
+* @inheritdoc
 */
+
 public function validateAuthKey($authKey)
 {
 return $this->getAuthKey() === $authKey;
@@ -167,9 +185,10 @@ public function generateAuthKey()
 {
 $this->auth_key = Yii::$app->security->generateRandomString();
 }
+
 /**
 * Generates new password reset token
-* broken into 2 lines to avoid wordwrapping
+* 2 lines to avoid wordwrapping, should be one line
 */
 public function generatePasswordResetToken()
 {
@@ -183,7 +202,7 @@ public function removePasswordResetToken()
 $this->password_reset_token = null;
 }
 /**
-* get role relationship
+* @getRole
 *
 */
 public function getRole()
@@ -191,7 +210,8 @@ public function getRole()
 return $this->hasOne(Role::className(), ['role_value' => 'role_id']);
 }
 /**
-* get role name
+* @getRoleName
+
 *
 */
 public function getRoleName()
@@ -199,7 +219,7 @@ public function getRoleName()
 return $this->role ? $this->role->role_name : '- no role -';
 }
 /**
-* get list of roles for dropdown
+* @getRoleList
 */
 public static function getRoleList()
 {
@@ -207,7 +227,7 @@ $droptions = Role::find()->asArray()->all();
 return Arrayhelper::map($droptions, 'role_value', 'role_name');
 }
 /**
-* get status relation
+* @getStatus
 *
 */
 public function getStatus()
@@ -215,15 +235,16 @@ public function getStatus()
 return $this->hasOne(Status::className(), ['status_value' => 'status_id']);
 }
 /**
-* get status name
+* @getStatusName
 *
 */
 public function getStatusName()
 {
+
 return $this->status ? $this->status->status_name : '- no status -';
 }
 /**
-* get list of statuses for dropdown
+* @getStatusList
 */
 public static function getStatusList()
 {
@@ -231,9 +252,35 @@ $droptions = Status::find()->asArray()->all();
 return Arrayhelper::map($droptions, 'status_value', 'status_name');
 }
 /**
-*getUserType
-*line break to avoid word wrap in PDF
-* code as single line in your IDE
+* @getProfile
+*
+*/
+public function getProfile()
+{
+return $this->hasOne(Profile::className(), ['user_id' => 'id']);
+}
+/**
+* @getProfileId
+*
+*/
+public function getProfileId()
+{
+return $this->profile ? $this->profile->id : 'none';
+}
+/**
+* @getProfileLink
+
+*
+*/
+public function getProfileLink()
+{
+$url = Url::to(['profile/view', 'id'=>$this->profileId]);
+$options = [];
+return Html::a($this->profile ? 'profile' : 'none', $url, $options);
+}
+/**
+* @getUserType
+* 2 lines to avoid wordwrap
 */
 public function getUserType()
 {
@@ -241,7 +288,7 @@ return $this->hasOne(UserType::className(), ['user_type_value' =>
 'user_type_id']);
 }
 /**
-* get user type name
+* @getUserTypeName
 *
 */
 public function getUserTypeName()
@@ -249,19 +296,41 @@ public function getUserTypeName()
 return $this->userType ? $this->userType->user_type_name : '- no user type -';
 }
 /**
-* get list of user types for dropdown
+*@getUserTypeList
 */
+
 public static function getUserTypeList()
 {
 $droptions = UserType::find()->asArray()->all();
 return Arrayhelper::map($droptions, 'user_type_value', 'user_type_name');
 }
 /**
-* get user type id
+* @getUserTypeId
 *
 */
 public function getUserTypeId()
 {
 return $this->userType ? $this->userType->id : 'none';
+}
+/**
+* @getUserIdLink
+*
+*/
+public function getUserIdLink()
+{
+$url = Url::to(['user/update', 'id'=>$this->id]);
+$options = [];
+return Html::a($this->id, $url, $options);
+}
+/**
+* @getUserLink
+*
+*/
+public function getUserLink()
+{
+
+$url = Url::to(['user/view', 'id'=>$this->Id]);
+$options = []; //
+return Html::a($this->username, $url, $options);
 }
 }
